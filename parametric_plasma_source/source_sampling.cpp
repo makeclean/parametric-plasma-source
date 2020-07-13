@@ -24,6 +24,7 @@ const double shafranov_shift = 0.0; //metres
 const std::string name = "parametric_plasma_source";
 const int number_of_bins  = 100;
 const int plasma_type = 1; // 1 is default; //0 = L mode anything else H/A mode
+const std::string basis = "xyz"; // xyz for 3D, ry or rz for 2D
 
 
 
@@ -70,9 +71,28 @@ extern "C" openmc::Particle::Bank sample_source(uint64_t* seed) {
     source.SampleSource(randoms,particle.r.x,particle.r.y,particle.r.z,
                         u,v,w,E); 
 
+    // Convert m to cm
     particle.r.x *= 100.;
     particle.r.y *= 100.;
-    particle.r.z *= 100.;    
+    particle.r.z *= 100.;
+
+    if(basis == "xyz") {
+        // Use values as-is
+    }
+    else if(basis == "ry") {
+        particle.r.x = std::sqrt(std::pow(particle.r.x, 2) + std::pow(particle.r.y, 2));
+        particle.r.y = particle.r.z;
+        particle.r.z = 0.;
+    }
+    else if(basis == "rz") {
+        particle.r.x = std::sqrt(std::pow(particle.r.x, 2) + std::pow(particle.r.y, 2));
+        particle.r.y = 0.;
+        particle.r.z = particle.r.z;
+    }
+    else {
+        throw std::runtime_error("Parametric plasma source: incorrect basis provided, "
+                                 "please use xyz, xy, or xz.");
+    }
    
     // particle.E = 14.08e6;
     particle.E = E*1e6; // convert from MeV -> eV
