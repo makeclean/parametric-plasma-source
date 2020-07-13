@@ -91,7 +91,7 @@ extern "C" openmc::Particle::Bank sample_source(uint64_t* seed) {
     }
     else {
         throw std::runtime_error("Parametric plasma source: incorrect basis provided, "
-                                 "please use xyz, xy, or xz.");
+                                 "please use xyz, ry, or rz.");
     }
    
     // particle.E = 14.08e6;
