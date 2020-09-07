@@ -3,6 +3,7 @@
 #include "openmc/source.h"
 #include "openmc/particle.h"
 #include "plasma_source.hpp"
+#include "enums.hpp"
 
 
 // Spherical tokamak SOURCE 
@@ -25,6 +26,7 @@ const double shafranov_shift = 0.0; //metres
 const std::string name = "parametric_plasma_source";
 const int number_of_bins  = 100;
 const int plasma_type = 1; // 1 is default; //0 = L mode anything else H/A mode
+const plasma_source::valid_basis basis = plasma_source::valid_basis::XYZ; // XYZ for 3D, RY or RZ for 2D
 
 
 plasma_source::PlasmaSource source = plasma_source::PlasmaSource(ion_density_pedistal,
@@ -70,9 +72,28 @@ extern "C" openmc::Particle::Bank sample_source(uint64_t* seed) {
     source.SampleSource(randoms,particle.r.x,particle.r.y,particle.r.z,
                         u,v,w,E); 
 
+    // Convert m to cm
     particle.r.x *= 100.;
     particle.r.y *= 100.;
-    particle.r.z *= 100.;    
+    particle.r.z *= 100.;
+
+    if(basis == plasma_source::valid_basis::XYZ) {
+        // Use values as-is
+    }
+    else if(basis == plasma_source::valid_basis::RY) {
+        particle.r.x = std::sqrt(std::pow(particle.r.x, 2) + std::pow(particle.r.y, 2));
+        particle.r.y = particle.r.z;
+        particle.r.z = 0.;
+    }
+    else if(basis == plasma_source::valid_basis::RZ) {
+        particle.r.x = std::sqrt(std::pow(particle.r.x, 2) + std::pow(particle.r.y, 2));
+        particle.r.y = 0.;
+        particle.r.z = particle.r.z;
+    }
+    else {
+        throw std::runtime_error("Parametric plasma source: incorrect basis provided, "
+                                 "please use XYZ, RY, or RZ.");
+    }
    
     // particle.E = 14.08e6;
     particle.E = E*1e6; // convert from MeV -> eV
